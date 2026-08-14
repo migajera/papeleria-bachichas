@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Papelería Bachichas 🐾</title>
+    <style>
+        :root {
+            --primary: #d35400;
+            --secondary: #e67e22;
+            --light: #fdf2e9;
+            --dark: #333;
+            --accent: #1abc9c;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--light); margin: 0; padding: 20px; color: var(--dark); }
+        .container { max-width: 1050px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 20px; }
+        
+        /* SISTEMA DE PESTAÑAS PRINCIPALES */
+        .nav-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .nav-btn { background: #ddd; border: none; padding: 12px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; color: #555; }
+        .nav-btn.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* DISEÑO DE CAJAS Y GRID */
+        .grid-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid-dos { grid-template-columns: 1fr; } }
+        .box { border: 2px solid var(--secondary); padding: 20px; margin-bottom: 20px; border-radius: 12px; background: #fffdf9; position: relative; }
+        .box h3 { margin-top: 0; color: var(--primary); }
+        
+        input, select, button { padding: 10px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #ba4600; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9em; }
+        th { background: var(--secondary); color: white; }
+        
+        .search-box { background: #e8f8f5; border-color: var(--accent); }
+        .search-box h3 { color: #16a085; }
+        .badge-agotado { color: #e74c3c; font-weight: bold; }
+        .badge-ok { color: #27ae60; }
+        .badge-servicio { color: #2980b9; font-weight: bold; }
+        .btn-editar { background: #2980b9; padding: 5px 10px; font-size: 0.85em; width: auto; margin: 0; }
+        .btn-editar:hover { background: #1f618d; }
+        .btn-eliminar-item { background: #e74c3c; padding: 4px 8px; font-size: 0.8em; width: auto; margin: 0; }
+
+        /* SUGERENCIAS AUTOCOMPLETADO */
+        .sugerencias-lista {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            z-index: 100;
+            max-height: 150px;
+            overflow-y: auto;
+            width: calc(100% - 40px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 0 0 6px 6px;
+            display: none;
+        }
+        .sugerencia-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.9em;
+            border-bottom: 1px solid #f2f2f2;
+        }
+        .sugerencia-item:hover {
+            background: #fdf2e9;
+            color: var(--primary);
+        }
+
+        /* PESTAÑAS DE HISTORIAL POR DÍAS */
+        .sub-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .sub-tab-btn { background: #bdc3c7; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; color: #2c3e50; }
+        .sub-tab-btn.active { background: #27ae60; color: white; }
+
+        /* TARJETAS ESTADÍSTICAS CLICKABLES */
+        .stat-card { background: #fff; border: 2px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .stat-card:hover { border-color: var(--primary); background: #fff5ec; }
+        .stat-card.alert { border-color: #e74c3c; background: #fdf5f5; }
+        .stat-card.alert:hover { background: #fce8e8; }
+
+        /* NOTIFICACIÓN FLOTANTE DISCRETA */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            transition: 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Papelería Bachichas 🐾</h1>
+    
+    <!-- PESTAÑAS PRINCIPALES -->
+    <div class="nav-tabs">
+        <button class="nav-btn active" onclick="switchMainTab('principal', this)">🏠 Mostrador (Principal)</button>
+        <button class="nav-btn" onclick="switchMainTab('historial', this)">📅 Días de Venta (Historial)</button>
+        <button class="nav-btn" onclick="switchMainTab('inventario', this)">📦 Productos e Inventario</button>
+    </div>
+
+    <!-- 1. SECCIÓN PRINCIPAL -->
+    <div id="principal" class="tab-content active">
+        <!-- BUSCADOR RÁPIDO -->
+        <div class="box search-box">
+            <h3>🔍 Consulta Rápida de Precios y Marcas</h3>
+            <input type="text" id="buscador-precio" placeholder="Escribe el producto, servicio o paquete..." onkeyup="buscarPrecioRapido()">
+            <div id="resultado-busqueda" style="margin-top: 10px; font-weight: bold; color: #16a085;"></div>
+        </div>
+
+        <div class="grid-dos">
+            <!-- AGREGAR A LA CUENTA (TICKET) -->
+            <div class="box">
+                <h3>🛒 Armar Cuenta del Cliente</h3>
+                <label>Buscar y Seleccionar Producto/Servicio:</label>
+                <input type="text" id="input-autocompletado" placeholder="Escribe para buscar..." onkeyup="filtrarAutocompletado()" autocomplete="off">
+                <input type="hidden" id="venta-producto-id">
+                <div id="lista-sugerencias" class="sugerencias-lista"></div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
+                    <div>
+                        <label>Cantidad:</label>
+                        <input type="number" id="venta-cantidad" value="1" min="1">
+                    </div>
+                    <div>
+                        <label>Precio unitario ($):</label>
+                        <input type="number" id="venta-precio-personalizado" placeholder="Precio" step="0.5">
+                    </div>
+                </div>
+                <button onclick="agregarAlTicket()" style="background: #27ae60; margin-top: 12px;">➕ Agregar al Carrito</button>
+            </div>
+
+            <!-- TICKET ACTUAL Y COBRO -->
+            <div class="box" style="border-color: #27ae60; background: #f4fcf7;">
+                <h3>🧾 Cuenta Actual</h3>
+                <div id="lista-ticket" style="min-height: 80px; max-height: 150px; overflow-y: auto; margin-bottom: 10px;">
+                    <p style="color: #777; font-style: italic; text-align: center;">El carrito está vacío.</p>
+                </div>
+                <div style="font-size: 1.2em; font-weight: bold; text-align: right; margin-bottom: 10px;">
+                    Total a Pagar: <span id="total-ticket" style="color: #27ae60;">$0.00</span>
+                </div>
+                <button onclick="cobrarVenta()" style="background: #27ae60; font-size: 1.1em;">💰 Cobrar y Registrar Venta</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. SECCIÓN DE HISTORIAL POR DÍAS -->
+    <div id="historial" class="tab-content">
+        <div class="box">
+            <h3>📅 Historial de Ventas por Día</h3>
+            <p style="color: #666; font-size: 0.9em;">Selecciona una fecha para ver el detalle de lo que se vendió ese día:</p>
+            
+            <!-- Botones de fechas -->
+            <div id="contenedor-sub-tabs" class="sub-tabs"></div>
+            
+            <!-- Detalle del día seleccionado -->
+            <div id="detalle-dia-contenido" style="margin-top: 20px;">
+                <p style="color: #888; text-align: center;">Selecciona un día arriba.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. SECCIÓN DE INVENTARIO Y NUEVOS PRODUCTOS -->
+    <div id="inventario" class="tab-content">
+        <!-- CAJA DE RESPALDO ENTRE COMPUTADORAS -->
+        <div class="box" style="background: #eef9ff; border-color: #2980b9;">
+            <h3 style="color: #2980b9;">💻 Pasar Datos a la Computadora Oficial</h3>
+            <p style="font-size: 0.9em; color: #555; margin-bottom: 12px;">Usa estos botones para llevarte todo tu inventario y ventas a la compu oficial de la papelería:</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <button onclick="exportarDatos()" style="background: #2980b9;">📤 1. Descargar Respaldo</button>
+                <div>
+                    <label style="font-size: 0.85em; font-weight: bold; color: #2980b9; display: block; margin-bottom: 2px;">2. Cargar Respaldo en la otra compu:</label>
+                    <input type="file" id="input-archivo-respaldo" accept=".json" onchange="importarDatos(event)" style="margin: 0; background: white; padding: 5px;">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-dos">
+            <!-- AGREGAR PRODUCTO O SERVICIO -->
+            <div class="box">
+                <h3>✨ Registrar Nuevo Elemento</h3>
+                <input type="text" id="nombre" placeholder="Nombre (ej. Copia B/N, Paquete Primaria)">
+                <input type="text" id="marca" placeholder="Marca ou Categoría (ej. Servicio, Paquete, Norma)">
+                <input type="number" id="precio" placeholder="Precio base / orientativo ($)" step="0.5">
+                
+                <label style="font-size: 0.85em; color: #555; margin-top: 5px; display: block;">Tipo de ítem:</label>
+                <select id="tipo-item" onchange="verificarTipoItem()">
+                    <option value="producto">Producto normal (con stock)</option>
+                    <option value="servicio">Servicio / Infinito (Copias, Impresiones)</option>
+                </select>
+
+                <div id="contenedor-stock">
+                    <input type="number" id="stock" placeholder="Cantidad en stock">
+                </div>
+
+                <button onclick="agregarProducto()">Guardar Elemento</button>
+            </div>
+
+            <!-- ESTADÍSTICAS RÁPIDAS (CLICKABLES) -->
+            <div class="box">
+                <h3>📊 Estado de Bachichas</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <div class="stat-card" onclick="filtrarInventario('todos')">
+                        <p style="margin: 0; font-size: 0.85em; color: #666;">Total Registrados</p>
+                        <p id="stat-total-prods" style="margin: 5px 0 0; font-size: 1.4em; font-weight: bold; color: var(--primary);">0</p>
+                    </div>
+                    <div class="stat-card alert" onclick="filtrarInventario('agotados')">
+                        <p style="margin: 0; font-size: 0.85em; color: #c0392b;">Agotados ⚠️</p>
+                        <p id="stat-total-agotados" style="margin: 5px 0 0; font-size: 1.4em; font-weight: bold; color: #e74c3c;">0</p>
+                    </div>
+                </div>
+                <p id="filtro-activo-txt" style="text-align: center; font-size: 0.85em; color: #666; margin-top: 10px; font-style: italic;"></p>
+            </div>
+        </div>
+
+        <!-- LISTA DE INVENTARIO -->
+        <div class="box">
+            <h3 id="titulo-tabla-inventario">📦 Inventario y Servicios Actuales</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Categoría / Marca</th>
+                        <th>Precio Ref.</th>
+                        <th>Stock / Estado</th>
+                        <th>Tipo</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="lista-inventario"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- AVISO FLOTANTE DISCRETO -->
+<div id="toast">¡Guardado con éxito!</div>
+
+<script>
+    let inventario = JSON.parse(localStorage.getItem('inventario_bachichas')) || [];
+    let historialDias = JSON.parse(localStorage.getItem('historial_dias_bachichas')) || {};
+    let ticketActual = [];
+    let filtroActualInventario = 'todos';
+
+    function mostrarToast(mensaje) {
+        const toast = document.getElementById('toast');
+        toast.innerText = mensaje;
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 1500);
+    }
+
+    function guardarTodo() {
+        inventario.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'accent' }));
+        localStorage.setItem('inventario_bachichas', JSON.stringify(inventario));
+        localStorage.setItem('historial_dias_bachichas', JSON.stringify(historialDias));
+        actualizarPantalla();
+    }
+
+    // AUTOGUARDADO AUTOMÁTICO CADA 2 MINUTOS (120000 milisegundos)
+    setInterval(() => {
+        inventario.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'accent' }));
+        localStorage.setItem('inventario_bachichas', JSON.stringify(inventario));
+        localStorage.setItem('historial_dias_bachichas', JSON.stringify(historialDias));
+        mostrarToast("💾 Autoguardado automático");
+    }, 120000);
+
+    function exportarDatos() {
+        const datos = {
+            inventario: inventario,
+            historialDias: historialDias
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(datos));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "respaldo_bachichas.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        mostrarToast("📤 Respaldo descargado");
+    }
+
+    function importarDatos(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const contenido = JSON.parse(e.target.result);
+                if (contenido.inventario && contenido.historialDias) {
+                    inventario = contenido.inventario;
+                    historialDias = contenido.historialDias;
+                    guardarTodo();
+                    mostrarToast("📥 ¡Datos cargados con éxito!");
+                } else {
+                    alert("El archivo no tiene el formato correcto de Bachichas.");
+                }
+            } catch (err) {
+                alert("Error al leer el archivo de respaldo.");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function switchMainTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    function verificarTipoItem() {
+        const tipo = document.getElementById('tipo-item').value;
+        const contStock = document.getElementById('contenedor-stock');
+        if(tipo === 'servicio') {
+            contStock.style.display = 'none';
+        } else {
+            contStock.style.display = 'block';
+        }
+    }
+
+    function agregarProducto() {
+        const nombre = document.getElementById('nombre').value.trim();
+        const marca = document.getElementById('marca').value.trim() || "General";
+        const precio = parseFloat(document.getElementById('precio').value);
+        const tipo = document.getElementById('tipo-item').value;
+        let stock = tipo === 'servicio' ? 999999 : parseInt(document.getElementById('stock').value);
+
+        if(nombre && !isNaN(precio) && (tipo === 'servicio' || !isNaN(stock))) {
+            inventario.push({ id: Date.now(), nombre, marca, precio, stock, tipo });
+            guardarTodo();
+            mostrarToast("✨ Elemento añadido");
+            document.getElementById('nombre').value = '';
+            document.getElementById('marca').value = '';
+            document.getElementById('precio').value = '';
+            document.getElementById('stock').value = '';
+            document.getElementById('tipo-item').value = 'producto';
+            verificarTipoItem();
+        }
+    }
+
+    function editarProducto(id) {
+        const prod = inventario.find(p => p.id == id);
+        if(!prod) return;
+
+        const nuevoNombre = prompt(`Editar nombre del producto:`, prod.nombre);
+        if(nuevoNombre === null) return;
+
+        const nuevaMarca = prompt(`Editar categoría o marca:`, prod.marca);
+        if(nuevaMarca === null) return;
+
+        const nuevoPrecio = prompt(`Editar precio de referencia ($):`, prod.precio);
+        if(nuevoPrecio === null) return;
+
+        let nuevoStock = prod.stock;
+        if(prod.tipo !== 'servicio') {
+            const stockStr = prompt(`Editar cantidad en stock:`, prod.stock);
+            if(stockStr === null) return;
+            nuevoStock = parseInt(stockStr);
+        }
+
+        const pParsed = parseFloat(nuevoPrecio);
+        const sParsed = prod.tipo === 'servicio' ? 999999 : nuevoStock;
+
+        if(nuevoNombre.trim() !== '' && !isNaN(pParsed) && !isNaN(sParsed)) {
+            prod.nombre = nuevoNombre.trim();
+            prod.marca = nuevaMarca.trim() || "General";
+            prod.precio = pParsed;
+            prod.stock = sParsed;
+            guardarTodo();
+            mostrarToast("✏️ ¡Actualizado correctamente!");
+        } else {
+            alert("Por favor ingresa datos válidos.");
+        }
+    }
+
+    // AUTOCOMPLETADO DE PRODUCTOS PARA EL TICKET
+    function filtrarAutocompletado() {
+        const texto = document.getElementById('input-autocompletado').value.toLowerCase().trim();
+        const listaDiv = document.getElementById('lista-sugerencias');
+        
+        if(texto === '') {
+            listaDiv.style.display = 'none';
+            document.getElementById('venta-producto-id').value = '';
+            return;
+        }
+
+        const filtrados = inventario.filter(p => 
+            (p.tipo === 'servicio' || p.stock > 0) && 
+            (p.nombre.toLowerCase().includes(texto) || p.marca.toLowerCase().includes(texto))
+        );
+
+        if(filtrados.length > 0) {
+            let html = '';
+            filtrados.forEach(p => {
+                let labelStock = p.tipo === 'servicio' ? 'Servicio' : `Stock: ${p.stock}`;
+                html += `<div class="sugerencia-item" onclick="seleccionarProductoAutocompletado(${p.id}, '${p.nombre.replace(/'/g, "\\'")}', ${p.precio})">
+                    <b>${p.nombre}</b> - ${p.marca} ($${p.precio}) [${labelStock}]
+                </div>`;
+            });
+            listaDiv.innerHTML = html;
+            listaDiv.style.display = 'block';
+        } else {
+            listaDiv.innerHTML = `<div class="sugerencia-item" style="color:#888;">No se encontró nada</div>`;
+            listaDiv.style.display = 'block';
+        }
+    }
+
+    function seleccionarProductoAutocompletado(id, nombre, precio) {
+        document.getElementById('input-autocompletado').value = nombre;
+        document.getElementById('venta-producto-id').value = id;
+        document.getElementById('venta-precio-personalizado').value = precio;
+        document.getElementById('lista-sugerencias').style.display = 'none';
+    }
+
+    function agregarAlTicket() {
+        const id = document.getElementById('venta-producto-id').value;
+        const cantidad = parseInt(document.getElementById('venta-cantidad').value);
+        const precioPersonalizado = parseFloat(document.getElementById('venta-precio-personalizado').value);
+        const prod = inventario.find(p => p.id == id);
+
+        if(!prod || cantidad <= 0 || isNaN(precioPersonalizado)) {
+            alert("Selecciona un producto válido de la lista de autocompletado y verifica los datos.");
+            return;
+        }
+
+        let enTicket = ticketActual.filter(item => item.id == id).reduce((sum, item) => sum + item.cantidad, 0);
+        if(prod.tipo !== 'servicio' && (cantidad + enTicket) > prod.stock) {
+            alert("No hay suficiente stock disponible.");
+            return;
+        }
+
+        ticketActual.push({
+            id: prod.id,
+            nombre: prod.nombre,
+            marca: prod.marca,
+            precio: precioPersonalizado,
+            cantidad: cantidad,
+            subtotal: cantidad * precioPersonalizado
+        });
+
+        actualizarTicketUI();
+        document.getElementById('input-autocompletado').value = '';
+        document.getElementById('venta-producto-id').value = '';
+        document.getElementById('venta-cantidad').value = 1;
+        document.getElementById('venta-precio-personalizado').value = '';
+    }
+
+    function eliminarDelTicket(index) {
+        ticketActual.splice(index, 1);
+        actualizarTicketUI();
+    }
+
+    function actualizarTicketUI() {
+        const contenedor = document.getElementById('lista-ticket');
+        const totalSpan = document.getElementById('total-ticket');
+        
+        if(ticketActual.length === 0) {
+            contenedor.innerHTML = `<p style="color: #777; font-style: italic; text-align: center;">El carrito está vacío.</p>`;
+            totalSpan.innerText = '$0.00';
+            return;
+        }
+
+        let html = '<table style="margin:0;">';
+        let totalGeneral = 0;
+
+        ticketActual.forEach((item, index) => {
+            totalGeneral += item.subtotal;
+            html += `
+                <tr>
+                    <td>${item.nombre} (${item.marca}) x${item.cantidad}</td>
+                    <td style="text-align:right;">$${item.subtotal.toFixed(2)}</td>
+                    <td style="text-align:right;"><button class="btn-eliminar-item" onclick="eliminarDelTicket(${index})">❌</button></td>
+                </tr>
+            `;
+        });
+
+        html += '</table>';
+        contenedor.innerHTML = html;
+        totalSpan.innerText = `$${totalGeneral.toFixed(2)}`;
+    }
+
+    function cobrarVenta() {
+        if(ticketActual.length === 0) return;
+
+        const ahora = new Date();
+        const fechaHoy = ahora.toLocaleDateString();
+        const horaActual = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        ticketActual.forEach(item => {
+            let prod = inventario.find(p => p.id == item.id);
+            if(prod && prod.tipo !== 'servicio') {
+                prod.stock -= item.cantidad;
+            }
+        });
+
+        if(!historialDias[fechaHoy]) {
+            historialDias[fechaHoy] = [];
+        }
+
+        ticketActual.forEach(item => {
+            historialDias[fechaHoy].unshift({
+                hora: horaActual,
+                descripcion: `${item.nombre} (${item.marca})`,
+                cantidad: item.cantidad,
+                total: item.subtotal
+            });
+        });
+
+        ticketActual = [];
+        guardarTodo();
+        actualizarTicketUI();
+        mostrarToast("💰 ¡Venta cobrada!");
+    }
+
+    function buscarPrecioRapido() {
+        const texto = document.getElementById('buscador-precio').value.toLowerCase().trim();
+        const resultadoDiv = document.getElementById('resultado-busqueda');
+        
+        if(texto === '') {
+            resultadoDiv.innerHTML = '';
+            return;
+        }
+
+        const encontrados = inventario.filter(p => p.nombre.toLowerCase().includes(texto) || p.marca.toLowerCase().includes(texto));
+
+        if(encontrados.length > 0) {
+            let html = '';
+            encontrados.forEach(p => {
+                let infoStock = p.tipo === 'servicio' ? 'Servicio ilimitado' : `Quedan: ${p.stock}`;
+                html += `<div>👉 ${p.nombre} [${p.marca}] — Precio Ref: <span style="color:#d35400;">$${p.precio}</span> (${infoStock})</div>`;
+            });
+            resultadoDiv.innerHTML = html;
+        } else {
+            resultadoDiv.innerHTML = '❌ No se encontró nada con ese nombre o marca.';
+        }
+    }
+
+    function filtrarInventario(tipo) {
+        filtroActualInventario = tipo;
+        actualizarPantalla();
+    }
+
+    function actualizarPantalla() {
+        inventario.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'accent' }));
+
+        let agotadosCount = inventario.filter(p => p.tipo !== 'servicio' && p.stock === 0).length;
+        document.getElementById('stat-total-prods').innerText = inventario.length;
+        document.getElementById('stat-total-agotados').innerText = agotadosCount;
+
+        const filtroTxt = document.getElementById('filtro-activo-txt');
+        const tituloTabla = document.getElementById('titulo-tabla-inventario');
+        if(filtroActualInventario === 'agotados') {
+            filtroTxt.innerHTML = 'Mostrando únicamente productos agotados. <a href="#" onclick="filtrarInventario(\'todos\'); return false;" style="color:var(--primary);">Ver todos</a>';
+            tituloTabla.innerHTML = '📦 Productos Agotados ⚠️';
+        } else {
+            filtroTxt.innerHTML = '';
+            tituloTabla.innerHTML = '📦 Inventario y Servicios Actuales';
+        }
+
+        const listaInv = document.getElementById('lista-inventario');
+        listaInv.innerHTML = '';
+
+        let listaAMostrar = inventario;
+        if(filtroActualInventario === 'agotados') {
+            listaAMostrar = inventario.filter(p => p.tipo !== 'servicio' && p.stock === 0);
+        }
+
+        listaAMostrar.forEach(p => {
+            let estado = '';
+            let tipoTxt = '';
+
+            if(p.tipo === 'servicio') {
+                estado = `<span class="badge-servicio">Ilimitado</span>`;
+                tipoTxt = 'Servicio';
+            } else {
+                estado = p.stock > 0 ? `<span class="badge-ok">${p.stock} pzas</span>` : `<span class="badge-agotado">AGOTADO</span>`;
+                tipoTxt = 'Producto';
+            }
+
+            listaInv.innerHTML += `
+                <tr>
+                    <td><b>${p.nombre}</b></td>
+                    <td>${p.marca}</td>
+                    <td>$${p.precio}</td>
+                    <td>${estado}</td>
+                    <td>${tipoTxt}</td>
+                    <td><button class="btn-editar" onclick="editarProducto(${p.id})">✏️ Editar</button></td>
+                </tr>
+            `;
+        });
+
+        if(listaAMostrar.length === 0) {
+            listaInv.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #888;">No hay elementos en esta vista.</td></tr>`;
+        }
+
+        const subTabsContainer = document.getElementById('contenedor-sub-tabs');
+        subTabsContainer.innerHTML = '';
+        const fechas = Object.keys(historialDias);
+
+        if(fechas.length === 0) {
+            subTabsContainer.innerHTML = `<p style="color: #888;">No hay días de venta registrados aún.</p>`;
+            document.getElementById('detalle-dia-contenido').innerHTML = `<p style="color: #888; text-align: center;">Sin registros.</p>`;
+            return;
+        }
+
+        fechas.forEach((fecha, index) => {
+            let btn = document.createElement('button');
+            btn.className = `sub-tab-btn ${index === 0 ? 'active' : ''}`;
+            btn.innerText = fecha;
+            btn.onclick = () => mostrarDetalleDia(fecha, btn);
+            subTabsContainer.appendChild(btn);
+        });
+
+        mostrarDetalleDia(fechas[0], subTabsContainer.firstChild);
+    }
+
+    function mostrarDetalleDia(fecha, btnElement) {
+        document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+        if(btnElement) btnElement.classList.add('active');
+
+        const contenedor = document.getElementById('detalle-dia-contenido');
+        const ventasDelDia = historialDias[fecha] || [];
+
+        if(ventasDelDia.length === 0) {
+            contenedor.innerHTML = `<p style="color: #888; text-align: center;">No hubo ventas este día.</p>`;
+            return;
+        }
+
+        let html = `
+            <h4 style="color: #2c3e50; margin-bottom: 5px;">Ventas del día: ${fecha}</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Elemento / Detalle</th>
+                        <th>Cant.</th>
+                        <th>Total Cobrado</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        let totalDia = 0;
+        ventasDelDia.forEach(v => {
+            totalDia += v.total;
+            html += `
+                <tr>
+                    <td>${v.hora}</td>
+                    <td>${v.descripcion}</td>
+                    <td>${v.cantidad}</td>
+                    <td>$${v.total.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+            <div style="text-align: right; font-size: 1.1em; font-weight: bold; margin-top: 10px; color: #27ae60;">
+                Total Vendido en el Día: $${totalDia.toFixed(2)}
+            </div>
+        `;
+
+        contenedor.innerHTML = html;
+    }
+
+    // Ocultar sugerencias si se hace clic fuera
+    document.addEventListener('click', function(e) {
+        if(!e.target.closest('#input-autocompletado') && !e.target.closest('#lista-sugerencias')) {
+            const lista = document.getElementById('lista-sugerencias');
+            if(lista) lista.style.display = 'none';
+        }
+    });
+
+    actualizarPantalla();
+</script>
+
+</body>
+</html>
